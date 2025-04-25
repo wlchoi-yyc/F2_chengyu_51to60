@@ -1,0 +1,236 @@
+<!DOCTYPE html><html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>成語配對遊戲</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    .game-area {
+      margin: 20px auto;
+      max-width: 900px;
+    }
+    .pairs, .options {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 20px;
+      gap: 10px;
+    }
+    .pair, .option {
+      background: #fff;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      padding: 10px 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      white-space: nowrap;
+      display: inline-block;
+    }
+    .pair.text-explanation {
+      background-color: #e6f4ff;
+    }
+    .pair img {
+      width: 150px;
+      height: auto;
+    }
+    .selected {
+      border-color: #4CAF50 !important;
+      box-shadow: 0 0 10px #4CAF50;
+    }
+    .message {
+      font-size: 20px;
+      color: #d9534f;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+    .success {
+      color: green;
+    }
+    .trophy {
+      width: 200px;
+      display: none;
+      margin: 20px auto;
+    }
+    .btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #45a049;
+    }
+    .scoreboard {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>成語配對遊戲</h1>
+  <div class="scoreboard">目前分數：<span id="score">0</span>/20</div>
+  <div id="game" class="game-area"></div>
+  <div id="message" class="message"></div>
+  <img id="trophy" class="trophy" src="trophy.png" alt="大獎杯">
+  <button id="nextBtn" class="btn" style="display:none">下一關</button>
+  <button id="restartBtn" class="btn" style="display:none">重新開始</button>
+  <button id="endBtn" class="btn" style="display:none">結束遊戲</button>  <script>
+    const levels = [
+      {
+        type: 'image',
+        pairs: [
+          { text: "一竅不通", img: "image 01" },
+          { text: "不恥下問", img: "image 02" },
+          { text: "茅塞頓開", img: "image 03" },
+          { text: "發人深省", img: "image 04" },
+          { text: "今非昔比", img: "image 05" },
+        ]
+      },
+      {
+        type: 'image',
+        pairs: [
+          { text: "老生常談", img: "image 06" },
+          { text: "拋磚引玉", img: "image 07" },
+          { text: "拾人牙慧", img: "image 08" },
+          { text: "語無倫次", img: "image 09" },
+          { text: "強詞奪理", img: "image 10" },
+        ]
+      },
+      {
+        type: 'text',
+        pairs: [
+          { text: "一竅不通", match: "比喻人對某事完全不懂" },
+          { text: "不恥下問", match: "形容人謙虛好學" },
+          { text: "茅塞頓開", match: "比喻閉塞的心思，頓時豁然了悟" },
+          { text: "發人深省", match: "啟發人深刻思考而有所醒悟" },
+          { text: "今非昔比", match: "形容變化很大" },
+        ]
+      },
+      {
+        type: 'text',
+        pairs: [
+          { text: "老生常談", match: "比喻時常聽到、了無新意的老話" },
+          { text: "拋磚引玉", match: "比喻自己先發表粗陋的詩文或不成熟的意見，以引出別人的佳作或高論" },
+          { text: "拾人牙慧", match: "比喻抄襲別人的語言或文字" },
+          { text: "語無倫次", match: "說話顛三倒四、毫無條理" },
+          { text: "強詞奪理", match: "形容沒有道理卻強為狡辯，硬說成有理" },
+        ]
+      }
+    ];
+
+    let currentLevel = 0;
+    let score = 0;
+    let selected = null;
+
+    function renderLevel() {
+      const game = document.getElementById('game');
+      const message = document.getElementById('message');
+      const nextBtn = document.getElementById('nextBtn');
+      const trophy = document.getElementById('trophy');
+      const restartBtn = document.getElementById('restartBtn');
+      const endBtn = document.getElementById('endBtn');
+
+      message.innerHTML = '';
+      nextBtn.style.display = 'none';
+      trophy.style.display = 'none';
+      restartBtn.style.display = 'none';
+      endBtn.style.display = 'none';
+      document.getElementById('score').textContent = score;
+
+      game.innerHTML = '';
+      selected = null;
+
+      const level = levels[currentLevel];
+      const targets = [...level.pairs];
+      const options = [...level.pairs];
+      targets.sort(() => Math.random() - 0.5);
+      options.sort(() => Math.random() - 0.5);
+
+      const optionContainer = document.createElement('div');
+      optionContainer.className = 'options';
+      options.forEach((opt) => {
+        const div = document.createElement('div');
+        div.className = 'option';
+        div.textContent = opt.text;
+        div.onclick = () => {
+          document.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+          div.classList.add('selected');
+          selected = opt;
+        };
+        optionContainer.appendChild(div);
+      });
+      game.appendChild(optionContainer);
+
+      const pairContainer = document.createElement('div');
+      pairContainer.className = 'pairs';
+      targets.forEach((target) => {
+        const div = document.createElement('div');
+        div.className = 'pair';
+        if (level.type === 'text') div.classList.add('text-explanation');
+        div.dataset.text = target.text;
+        div.innerHTML = level.type === 'image' ? `<img src='${target.img}.png'>` : target.match;
+        div.onclick = () => {
+          document.querySelectorAll('.pair').forEach(el => el.classList.remove('selected'));
+          div.classList.add('selected');
+          if (selected) {
+            if (selected.text === target.text) {
+              message.innerHTML = '<span class="success">答對了！</span>';
+              div.remove();
+              const selectedDiv = Array.from(optionContainer.children).find(c => c.textContent === selected.text);
+              if (selectedDiv) selectedDiv.remove();
+              score++;
+              document.getElementById('score').textContent = score;
+              if (optionContainer.children.length === 0) {
+                if (currentLevel < levels.length - 1) {
+                  message.innerHTML = '非常好！你已成功過關！';
+                  nextBtn.style.display = 'inline-block';
+                } else {
+                  message.innerHTML = '恭喜你取得滿分！';
+                  trophy.style.display = 'block';
+                  restartBtn.style.display = 'inline-block';
+                  endBtn.style.display = 'inline-block';
+                }
+              }
+            } else {
+              message.innerHTML = '選錯了，請重新作答。';
+            }
+            selected = null;
+            document.querySelectorAll('.option, .pair').forEach(el => el.classList.remove('selected'));
+          }
+        };
+        pairContainer.appendChild(div);
+      });
+      game.appendChild(pairContainer);
+    }
+
+    document.getElementById('nextBtn').onclick = () => {
+      currentLevel++;
+      renderLevel();
+    };
+    document.getElementById('restartBtn').onclick = () => {
+      currentLevel = 0;
+      score = 0;
+      renderLevel();
+    };
+    document.getElementById('endBtn').onclick = () => {
+      document.getElementById('game').innerHTML = '<h2>謝謝參與！</h2>';
+      document.getElementById('message').innerHTML = '';
+      document.getElementById('trophy').style.display = 'none';
+      document.getElementById('nextBtn').style.display = 'none';
+      document.getElementById('restartBtn').style.display = 'none';
+      document.getElementById('endBtn').style.display = 'none';
+    };
+
+    renderLevel();
+  </script></body>
+</html>
